@@ -14,6 +14,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function Home() {
   const [prompt, setPrompt] = useState("")
@@ -21,21 +23,34 @@ export default function Home() {
   const [aspectRatio, setAspectRatio] = useState("square_hd")
   const [loading, setLoading] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleGenerate = async () => {
     setLoading(true)
+    setError(null)
+    setGeneratedImage(null)
+    
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, imageSize: aspectRatio }), // mapping UI aspect ratio to API param
+        body: JSON.stringify({ prompt, imageSize: aspectRatio }),
       })
-      const data = await response.json()
-      if (data.data?.images?.[0]?.url) {
-        setGeneratedImage(data.data.images[0].url)
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || `Error ${response.status}: ${response.statusText}`)
       }
-    } catch (error) {
-      console.error("Generation failed", error)
+      
+      if (result.data?.images?.[0]?.url) {
+        setGeneratedImage(result.data.images[0].url)
+      } else {
+        throw new Error("No image URL returned from API")
+      }
+    } catch (err) {
+      console.error("Generation failed", err)
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
       setLoading(false)
     }
@@ -70,6 +85,14 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-6">
             
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Prompt Input */}
             <div className="space-y-2">
               <Label htmlFor="prompt">Prompt</Label>

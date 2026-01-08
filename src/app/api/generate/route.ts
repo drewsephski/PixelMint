@@ -7,12 +7,20 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
+      console.error("Generate API: Unauthorized - No userId");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { prompt, imageSize, numInferenceSteps } = await request.json();
+    const body = await request.json();
+    const { prompt, imageSize, numInferenceSteps } = body;
 
-    const result = await fal.subscribe("fal-ai/flux/schnell", {
+    if (!prompt) {
+      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    }
+
+    console.log(`Generating image for user ${userId} with prompt: ${prompt}`);
+
+    const result = (await fal.subscribe("fal-ai/flux/schnell", {
       input: {
         prompt,
         image_size: imageSize || "square_hd",
@@ -24,12 +32,21 @@ export async function POST(request: Request) {
           update.logs.map((log) => log.message).forEach(console.log);
         }
       },
-    }) as { data: { images: { url: string }[] } };
+    })) as unknown as { images: { url: string }[] };
 
-    const generatedImageUrl = result.data.images[0].url;
+    console.log("Fal.ai result received:", JSON.stringify(result));
+
+    if (!result.images || result.images.length === 0) {
+      throw new Error("Fal.ai returned no images");
+    }
+
+    const generatedImageUrl = result.images[0].url;
 
     // Fetch the image to upload to Supabase
     const imageResponse = await fetch(generatedImageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image from Fal: ${imageResponse.statusText}`);
+    }
     const imageBuffer = await imageResponse.arrayBuffer();
 
     // Generate a unique path
@@ -45,6 +62,7 @@ export async function POST(request: Request) {
       });
 
     if (uploadError) {
+      console.error("Supabase Storage Error:", uploadError);
       throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
 
@@ -59,15 +77,18 @@ export async function POST(request: Request) {
     const { error: dbError } = await supabaseAdmin.from("generations").insert({
       user_id: userId,
       prompt,
-      style: "flux-schnell", // Storing model/style info
+      style: "flux-schnell",
       aspect_ratio: imageSize || "square_hd",
       image_url: publicUrl,
       storage_path: filePath,
     });
 
     if (dbError) {
+      console.error("Supabase DB Error:", dbError);
       throw new Error(`Database insert failed: ${dbError.message}`);
     }
+
+    console.log("Generation successful and saved to Supabase");
 
     // Return the result with the persistent URL
     return NextResponse.json({
@@ -77,7 +98,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Generation error:", error);
+    console.error("Generation error details:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Something went wrong" },
       { status: 500 }

@@ -6,9 +6,7 @@ import { expect, test, vi } from 'vitest'
 vi.mock('@fal-ai/client', () => ({
   fal: {
     subscribe: vi.fn().mockResolvedValue({
-      data: {
-        images: [{ url: 'https://example.com/image.jpg' }]
-      }
+      images: [{ url: 'https://example.com/image.jpg' }]
     }),
   }
 }))
@@ -43,6 +41,7 @@ vi.mock('@/lib/supabase-admin', () => ({
 
 // Mock fetch for image download
 global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
   arrayBuffer: () => Promise.resolve(new ArrayBuffer(8))
 } as Response)
 
