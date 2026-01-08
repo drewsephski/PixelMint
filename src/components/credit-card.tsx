@@ -7,12 +7,13 @@ import { Zap } from "lucide-react";
 interface CreditCardProps {
   credits: number;
   price: number;
+  originalPrice?: number;
   description: string;
   priceId: string;
   onPurchase: (priceId: string) => void;
 }
 
-export function CreditCard({ credits, price, description, priceId, onPurchase }: CreditCardProps) {
+export function CreditCard({ credits, price, originalPrice, description, priceId, onPurchase }: CreditCardProps) {
   const handlePurchaseClick = () => {
     onPurchase(priceId);
   };
@@ -27,7 +28,15 @@ export function CreditCard({ credits, price, description, priceId, onPurchase }:
         <CardDescription className="mt-2 text-muted-foreground">{description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex items-center justify-start">
-        <p className="text-5xl font-extrabold text-foreground">${price.toFixed(2)}</p>
+        <div className="flex flex-col items-start">
+          {originalPrice && originalPrice > price && (
+            <p className="text-2xl font-bold text-muted-foreground line-through">${originalPrice.toFixed(2)}</p>
+          )}
+          <p className="text-5xl font-extrabold text-foreground">${price.toFixed(2)}</p>
+          {originalPrice && originalPrice > price && (
+            <p className="text-sm font-bold text-green-600 uppercase tracking-widest">50% OFF</p>
+          )}
+        </div>
       </CardContent>
       <CardFooter className="w-full">
         <Button onClick={handlePurchaseClick} className="w-full text-lg font-bold py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">

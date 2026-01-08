@@ -19,9 +19,24 @@ export async function GET() {
 
   if (error) {
     console.error("Error fetching credits:", error);
-    // If no entry exists, return 0 credits
+    // If no entry exists, create one with 2 free credits for new users
     if (error.code === "PGRST116") {
-      return NextResponse.json({ credits: 0 }, { status: 200 });
+      try {
+        const { error: insertError } = await supabaseAdmin
+          .from("user_credits")
+          .insert({ user_id: userId, credits: 2 });
+
+        if (insertError) {
+          console.error("Error creating initial credits:", insertError);
+          return NextResponse.json({ error: insertError.message }, { status: 500 });
+        }
+
+        console.log(`Created initial 2 credits for new user: ${userId}`);
+        return NextResponse.json({ credits: 2 }, { status: 200 });
+      } catch (insertError) {
+        console.error("Error creating initial credits:", insertError);
+        return NextResponse.json({ error: "Failed to create initial credits" }, { status: 500 });
+      }
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

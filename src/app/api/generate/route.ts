@@ -35,11 +35,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  const { prompt, imageSize } = await req.json();
+  const { prompt, model } = await req.json();
 
   if (!prompt) {
     return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
   }
+
+  // Model configurations with costs
+  const IMAGE_MODELS = {
+    "flux-schnell": {
+      modelId: "fal-ai/flux-kontext-lora/text-to-image",
+      credits: 1
+    },
+    "flux-dev": {
+      modelId: "fal-ai/flux/dev",
+      credits: 2
+    },
+    "fast-sdxl": {
+      modelId: "fal-ai/fast-sdxl",
+      credits: 1
+    }
+  };
+
+  const selectedModel = IMAGE_MODELS[model as keyof typeof IMAGE_MODELS] || IMAGE_MODELS["flux-schnell"];
+  const creditCost = selectedModel.credits;
 
   // Check user credits
   const { data: userCredits, error: creditsError } = await supabaseAdmin
@@ -56,14 +75,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: creditsError.message }, { status: 500 });
   }
 
-  if (!userCredits || userCredits.credits <= 0) {
-    return NextResponse.json({ error: "Not enough credits" }, { status: 403 });
+  if (!userCredits || userCredits.credits < creditCost) {
+    return NextResponse.json({
+      error: `Not enough credits. ${model} requires ${creditCost} credits.`
+    }, { status: 403 });
   }
 
-  // Deduct one credit
+  // Deduct credits based on selected model
   const { error: deductError } = await supabaseAdmin
     .from("user_credits")
-    .update({ credits: userCredits.credits - 1 })
+    .update({ credits: userCredits.credits - creditCost })
     .eq("user_id", userId);
 
   if (deductError) {
@@ -72,21 +93,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const aspectRatios: { [key: string]: "square_hd" | "landscape_4_3" | "landscape_16_9" | "square" | "portrait_4_3" | "portrait_16_9" } = {
-      square_hd: "square_hd",
-      landscape_4_3: "landscape_4_3",
-      landscape_16_9: "landscape_16_9",
-    };
-    const aspectRatio = aspectRatios[imageSize as string] || "square_hd";
-
     const result = await fal.run(
-      "fal-ai/flux/schnell", // Fast text-to-image model
+      selectedModel.modelId,
       {
         input: {
           prompt: prompt,
-          image_size: aspectRatio,
-          num_inference_steps: 4, // Faster generation
-          seed: 42, // For reproducibility, can be randomized
+          image_size: "square_hd", // Default to square_hd for all images
+          num_inference_steps: model === "flux-schnell" ? 4 : 20, // Faster for schnell, higher quality for others
+          seed: Math.floor(Math.random() * 1000000), // Random seed for variety
         },
       }
     );
@@ -109,10 +123,13 @@ export async function POST(req: Request) {
       .insert({
         user_id: userId,
         prompt: prompt,
-        style: "flux",
-        aspect_ratio: imageSize,
+        style: model,
         image_url: imageUrl,
         storage_path: "N/A",
+        metadata: {
+          model: selectedModel.modelId,
+          credits_used: creditCost
+        }
       })
       .select()
       .single();
