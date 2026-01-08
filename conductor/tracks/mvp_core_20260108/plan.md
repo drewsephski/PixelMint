@@ -4,7 +4,7 @@
 - [x] Task: Scaffold Next.js project with Tailwind CSS and shadcn/ui [e1de0a9]
 - [x] Task: Integrate Clerk Authentication (Middleware, Sign-in/Sign-up pages) [a1f91c1]
 - [x] Task: Set up Supabase Client and Database Schema (generations table) [dc0ecf6]
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Foundation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation' (Protocol in workflow.md) [checkpoint: 0a52619]
 
 ## Phase 2: Core Generation Workflow
 - [ ] Task: Implement Fal.ai API Route for image generation
