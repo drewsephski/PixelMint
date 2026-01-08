@@ -37,13 +37,13 @@ export async function POST(req: NextRequest) {
 
     let creditsToAdd = 0;
     switch (priceId) {
-      case "price_1SnK4tRY4K4exiDkN5PLppld":
+      case "price_1SnLuDDfHkj3MZlTBqJyqrA8":
         creditsToAdd = 10;
         break;
-      case "price_1SnK55RY4K4exiDk9X1V8yvV":
+      case "price_1SnLuJDfHkj3MZlTP2HheMjp":
         creditsToAdd = 50;
         break;
-      case "price_1SnK5RRY4K4exiDkmyVWqtJU":
+      case "price_1SnLuLDfHkj3MZlTMPVFfWyj":
         creditsToAdd = 250;
         break;
       default:

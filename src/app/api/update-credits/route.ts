@@ -38,11 +38,11 @@ export async function POST(req: NextRequest) {
     // Determine credit amount based on priceId (you'll need to map price IDs to credit amounts)
     // For demonstration, let's assume priceId "price_123" gives 100 credits
     let creditsToAdd = 0;
-    if (priceId === "price_1SnK4tRY4K4exiDkN5PLppld") {
+    if (priceId === "price_1SnLuDDfHkj3MZlTBqJyqrA8") {
         creditsToAdd = 10;
-    } else if (priceId === "price_1SnK55RY4K4exiDk9X1V8yvV") {
+    } else if (priceId === "price_1SnLuJDfHkj3MZlTP2HheMjp") {
         creditsToAdd = 50;
-    } else if (priceId === "price_1SnK5RRY4K4exiDkmyVWqtJU") {
+    } else if (priceId === "price_1SnLuLDfHkj3MZlTMPVFfWyj") {
         creditsToAdd = 250;
     } else {
         return NextResponse.json({ error: "Unknown price ID" }, { status: 400 });

@@ -641,21 +641,21 @@ export default function Home() {
                 credits={10}
                 price={1.99}
                 description="10 image generations"
-                priceId="price_1SnK4tRY4K4exiDkN5PLppld"
+                priceId="price_1SnLuDDfHkj3MZlTBqJyqrA8"
                 onPurchase={handlePurchaseCredits}
               />
               <CreditCard
                 credits={50}
                 price={4.99}
                 description="50 image generations"
-                priceId="price_1SnK55RY4K4exiDk9X1V8yvV"
+                priceId="price_1SnLuJDfHkj3MZlTP2HheMjp"
                 onPurchase={handlePurchaseCredits}
               />
               <CreditCard
                 credits={250}
                 price={20.00}
                 description="250 image generations"
-                priceId="price_1SnK5RRY4K4exiDkmyVWqtJU"
+                priceId="price_1SnLuLDfHkj3MZlTMPVFfWyj"
                 onPurchase={handlePurchaseCredits}
               />
             </div>
