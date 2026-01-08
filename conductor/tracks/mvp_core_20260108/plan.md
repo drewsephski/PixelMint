@@ -9,7 +9,7 @@
 ## Phase 2: Core Generation Workflow
 - [x] Task: Implement Fal.ai API Route for image generation [cfdf060]
 - [x] Task: Build Prompt Input and Style/Aspect Ratio Selection UI [a3dfcce]
-- [ ] Task: Implement 'Generate' logic with loading states and Supabase storage upload
+- [~] Task: Implement 'Generate' logic with loading states and Supabase storage upload
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Generation Workflow' (Protocol in workflow.md)
 
 ## Phase 3: Gallery & Export
