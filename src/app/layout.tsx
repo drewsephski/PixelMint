@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Image Generator",
-  description: "Generate beautiful images with AI",
+  title: "PixelMint - AI Image Generator",
+  description: "Create stunning images with PixelMint's advanced AI technology",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -66,13 +66,33 @@ export async function POST(req: NextRequest) {
       newCredits += existingCredits.credits;
     }
 
-    const { error: updateError } = await supabaseAdmin
+    // Try to update first
+    const { data: updateData, error: updateError } = await supabaseAdmin
       .from("user_credits")
-      .upsert({ user_id: userId, credits: newCredits }, { onConflict: "user_id" });
+      .update({ credits: newCredits })
+      .eq("user_id", userId)
+      .select();
 
     if (updateError) {
       console.error("Error updating credits:", updateError);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    // If no rows were updated, insert a new row
+    if (!updateData || updateData.length === 0) {
+      const { error: insertError } = await supabaseAdmin
+        .from("user_credits")
+        .insert({ user_id: userId, credits: newCredits });
+
+      if (insertError) {
+        console.error("Error inserting credits:", insertError);
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
+      }
+    }
+
+    if (updateError) {
+      console.error("Error updating credits:", updateError);
+      return NextResponse.json({ error: "Error updating credits" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, newCredits });
