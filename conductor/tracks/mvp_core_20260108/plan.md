@@ -7,7 +7,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation' (Protocol in workflow.md) [checkpoint: 0a52619]
 
 ## Phase 2: Core Generation Workflow
-- [ ] Task: Implement Fal.ai API Route for image generation
+- [~] Task: Implement Fal.ai API Route for image generation
 - [ ] Task: Build Prompt Input and Style/Aspect Ratio Selection UI
 - [ ] Task: Implement 'Generate' logic with loading states and Supabase storage upload
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Generation Workflow' (Protocol in workflow.md)
