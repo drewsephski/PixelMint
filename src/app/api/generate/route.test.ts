@@ -5,10 +5,37 @@ import { expect, test, vi } from 'vitest'
 // Mock Fal.ai
 vi.mock('@fal-ai/client', () => ({
   fal: {
-    subscribe: vi.fn().mockResolvedValue({
-      images: [{ url: 'https://example.com/image.jpg' }]
+    config: vi.fn(),
+    run: vi.fn().mockResolvedValue({
+      data: {
+        images: [{ url: 'https://example.com/image.jpg' }],
+        seed: 12345,
+        timings: { inference: 1.5 }
+      },
+      requestId: 'test-request-id'
     }),
-  }
+    subscribe: vi.fn().mockResolvedValue({
+      data: {
+        images: [{ url: 'https://example.com/image.jpg' }],
+        seed: 12345,
+        timings: { inference: 1.5 }
+      },
+      requestId: 'test-request-id'
+    }),
+  },
+  ApiError: class ApiError extends Error {
+    constructor(message: string, public status: number, public body?: any) {
+      super(message);
+      this.name = 'ApiError';
+    }
+  },
+  ValidationError: class ValidationError extends Error {
+    constructor(message: string, public body?: any) {
+      super(message);
+      this.name = 'ValidationError';
+    }
+  },
+  isRetryableError: vi.fn().mockReturnValue(false),
 }))
 
 // Mock Clerk Auth

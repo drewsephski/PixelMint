@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const result = (await fal.subscribe("fal-ai/flux/schnell", {
       input: {
         prompt,
-        image_size: imageSize || "square_hd",
+        image_size: (imageSize || "square_hd") as any,
         num_inference_steps: numInferenceSteps || 4,
       },
       logs: true,
@@ -32,15 +32,15 @@ export async function POST(request: Request) {
           update.logs.map((log) => log.message).forEach(console.log);
         }
       },
-    })) as unknown as { images: { url: string }[] };
+    })) as unknown as { data: { images: { url: string }[] } };
 
-    console.log("Fal.ai result received:", JSON.stringify(result));
+    console.log("Fal.ai result received");
 
-    if (!result.images || result.images.length === 0) {
+    if (!result.data?.images || result.data.images.length === 0) {
       throw new Error("Fal.ai returned no images");
     }
 
-    const generatedImageUrl = result.images[0].url;
+    const generatedImageUrl = result.data.images[0].url;
 
     // Fetch the image to upload to Supabase
     const imageResponse = await fetch(generatedImageUrl);
