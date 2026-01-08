@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
-import { AlertCircle, Loader } from "lucide-react";
+import { AlertCircle, Loader, Download } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
@@ -40,7 +40,7 @@ interface GenerateResponse {
     images: Array<{ url: string }>;
     original_url: string;
     seed?: number;
-    timings?: any;
+    timings?: Record<string, unknown>;
   };
   error?: string;
 }
@@ -87,14 +87,14 @@ export default function Home() {
   });
 
   /**
-   * Handle prompt change with debounce considerations
+   * Handle prompt change
    */
   const handlePromptChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setState((prev) => ({
         ...prev,
         prompt: e.target.value,
-        error: null, // Clear error when user starts typing
+        error: null,
       }));
     },
     []
@@ -113,108 +113,6 @@ export default function Home() {
   const handleAspectRatioChange = useCallback((value: string) => {
     setState((prev) => ({ ...prev, aspectRatio: value }));
   }, []);
-
-  /**
-   * Generate image with improved error handling
-   */
-  const handleGenerate = useCallback(async () => {
-    const trimmedPrompt = state.prompt.trim();
-
-    // Client-side validation
-    if (!trimmedPrompt) {
-      setState((prev) => ({
-        ...prev,
-        error: "Please enter a prompt",
-      }));
-      return;
-    }
-
-    if (trimmedPrompt.length > 500) {
-      setState((prev) => ({
-        ...prev,
-        error: "Prompt must be less than 500 characters",
-      }));
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      loading: true,
-      error: null,
-      generatedImage: null,
-    }));
-
-    try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: trimmedPrompt,
-          imageSize: state.aspectRatio,
-        }),
-      });
-
-      const contentType = response.headers.get("content-type");
-      const isJson = contentType?.includes("application/json");
-
-      if (!isJson) {
-        throw new Error(
-          `Server returned invalid response (Status ${response.status}). Please check your connection and try again.`
-        );
-      }
-
-      const result = (await response.json()) as GenerateResponse;
-
-      if (!response.ok) {
-        throw new Error(
-          result.error || `Generation failed: ${response.statusText}`
-        );
-      }
-
-      if (!result.data?.images?.[0]?.url) {
-        throw new Error("No image URL returned from API");
-      }
-
-      setState((prev) => ({
-        ...prev,
-        generatedImage: result.data ? result.data.images[0].url : null,
-      }));
-
-      // Refresh generations list to include the new generation
-      fetchGenerations();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred. Please try again.";
-
-      console.error("Generation failed:", error);
-
-      setState((prev) => ({
-        ...prev,
-        error: errorMessage,
-        generatedImage: null,
-      }));
-    } finally {
-      setState((prev) => ({
-        ...prev,
-        loading: false,
-      }));
-    }
-  }, [state.prompt, state.aspectRatio]);
-
-  /**
-   * Memoized button disabled state
-   */
-  const isGenerateDisabled = useMemo(
-    () => state.loading || !state.prompt.trim(),
-    [state.loading, state.prompt]
-  );
-
-  /**
-   * Memoized style options for render optimization
-   */
-  const styleOptions = useMemo(() => STYLE_OPTIONS, []);
 
   /**
    * Fetch user's past generations
@@ -246,16 +144,108 @@ export default function Home() {
   }, []);
 
   /**
+   * Generate image
+   */
+  const handleGenerate = useCallback(async () => {
+    const trimmedPrompt = state.prompt.trim();
+
+    if (!trimmedPrompt) {
+      setState((prev) => ({
+        ...prev,
+        error: "Please enter a prompt",
+      }));
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      loading: true,
+      error: null,
+      generatedImage: null,
+    }));
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: trimmedPrompt,
+          imageSize: state.aspectRatio,
+        }),
+      });
+
+      const contentType = response.headers.get("content-type");
+      const isJson = contentType?.includes("application/json");
+
+      if (!isJson) {
+        throw new Error(
+          `Server returned invalid response (Status ${response.status}).`
+        );
+      }
+
+      const result = (await response.json()) as GenerateResponse;
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || `Generation failed: ${response.statusText}`
+        );
+      }
+
+      if (!result.data?.images?.[0]?.url) {
+        throw new Error("No image URL returned from API");
+      }
+
+      setState((prev) => ({
+        ...prev,
+        generatedImage: result.data ? result.data.images[0].url : null,
+      }));
+
+      // Refresh generations list
+      fetchGenerations();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
+
+      console.error("Generation failed:", error);
+
+      setState((prev) => ({
+        ...prev,
+        error: errorMessage,
+        generatedImage: null,
+      }));
+    } finally {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+      }));
+    }
+  }, [state.prompt, state.aspectRatio, fetchGenerations]);
+
+  /**
    * Load generations on component mount
    */
   useEffect(() => {
     fetchGenerations();
   }, [fetchGenerations]);
 
-  /**
-   * Memoized aspect ratio options for render optimization
-   */
+  const isGenerateDisabled = useMemo(
+    () => state.loading || !state.prompt.trim(),
+    [state.loading, state.prompt]
+  );
+
+  const styleOptions = useMemo(() => STYLE_OPTIONS, []);
   const aspectRatioOptions = useMemo(() => ASPECT_RATIO_OPTIONS, []);
+
+  const downloadImage = (url: string, filename: string) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-zinc-50 font-sans dark:bg-black">
@@ -286,7 +276,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="flex w-full max-w-5xl flex-col items-center gap-8 py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex w-full max-w-5xl flex-col items-center gap-12 py-8 px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -297,46 +287,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Generations Gallery */}
-        {state.generations.length > 0 && (
-          <div className="w-full max-w-5xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-foreground">Your Generations</h2>
-              {state.loadingGenerations && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {state.generations.map((generation) => (
-                <Card key={generation.id} className="overflow-hidden">
-                  <div className="aspect-square overflow-hidden">
-                    <Image
-                      src={generation.image_url}
-                      alt={generation.prompt}
-                      width={256}
-                      height={256}
-                      className="h-full w-full object-cover transition-transform hover:scale-105"
-                      priority={false}
-                    />
-                  </div>
-                  <CardContent className="p-3">
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {generation.prompt}
-                    </p>
-                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{generation.aspect_ratio}</span>
-                      <span>{new Date(generation.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Generator Card */}
         <Card className="w-full max-w-2xl shadow-lg">
           <CardHeader>
@@ -344,7 +294,6 @@ export default function Home() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Error Alert */}
             {state.error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -353,7 +302,6 @@ export default function Home() {
               </Alert>
             )}
 
-            {/* Prompt Input */}
             <div className="space-y-2">
               <Label htmlFor="prompt">
                 Prompt
@@ -372,9 +320,7 @@ export default function Home() {
               />
             </div>
 
-            {/* Settings Grid */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              {/* Style Selector */}
               <div className="space-y-2">
                 <Label htmlFor="style">Style</Label>
                 <Select value={state.style} onValueChange={handleStyleChange}>
@@ -391,7 +337,6 @@ export default function Home() {
                 </Select>
               </div>
 
-              {/* Aspect Ratio Selector */}
               <div className="space-y-2">
                 <Label>Aspect Ratio</Label>
                 <Tabs
@@ -415,8 +360,7 @@ export default function Home() {
             </div>
           </CardContent>
 
-          {/* Card Footer */}
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 border-t pt-6">
             <Button
               size="lg"
               className="w-full text-base font-semibold"
@@ -433,12 +377,8 @@ export default function Home() {
               )}
             </Button>
 
-            {/* Generated Image Display */}
             {state.generatedImage && (
               <div className="mt-4 w-full space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Generated Image
-                </p>
                 <div className="overflow-hidden rounded-lg border bg-background p-2">
                   <Image
                     src={state.generatedImage}
@@ -453,19 +393,75 @@ export default function Home() {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => {
-                    const link = document.createElement("a");
-                    link.href = state.generatedImage!;
-                    link.download = `generated-${Date.now()}.jpg`;
-                    link.click();
-                  }}
+                  onClick={() => downloadImage(state.generatedImage!, `generated-${Date.now()}.jpg`)}
                 >
+                  <Download className="mr-2 h-4 w-4" />
                   Download Image
                 </Button>
               </div>
             )}
           </CardFooter>
         </Card>
+
+        {/* Generations Gallery */}
+        <div className="w-full max-w-5xl space-y-6">
+          <div className="flex items-center justify-between border-b pb-4">
+            <h2 className="text-2xl font-semibold text-foreground">Past Generations</h2>
+            {state.loadingGenerations && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader className="h-4 w-4 animate-spin" />
+                Updating...
+              </div>
+            )}
+          </div>
+
+          {state.generations.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {state.generations.map((generation) => (
+                <Card key={generation.id} className="group overflow-hidden shadow-sm transition-shadow hover:shadow-md">
+                  <div className="relative aspect-square overflow-hidden bg-zinc-100">
+                    <Image
+                      src={generation.image_url}
+                      alt={generation.prompt}
+                      width={400}
+                      height={400}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => downloadImage(generation.image_url, `generation-${generation.id}.jpg`)}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <p className="line-clamp-2 text-sm font-medium leading-relaxed text-foreground">
+                      {generation.prompt}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <span className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">
+                        {generation.aspect_ratio.replace('_', ' ')}
+                      </span>
+                      <span>{new Date(generation.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="mb-4 rounded-full bg-zinc-100 p-4 dark:bg-zinc-900">
+                <Image className="opacity-20 grayscale" src="/next.svg" alt="Empty" width={40} height={10} />
+              </div>
+              <p className="text-muted-foreground">No generations yet. Start by creating one above!</p>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

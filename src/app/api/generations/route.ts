@@ -2,18 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-// Type definitions
-interface Generation {
-  id: string;
-  created_at: string;
-  user_id: string;
-  prompt: string;
-  style: string;
-  aspect_ratio: string;
-  image_url: string;
-  storage_path: string;
-}
-
 /**
  * GET /api/generations - Fetch user's past generations
  */

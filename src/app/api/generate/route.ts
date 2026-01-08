@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const result = (await fal.subscribe("fal-ai/flux/schnell", {
       input: {
         prompt,
-        image_size: (imageSize || "square_hd") as any,
+        image_size: (imageSize || "square_hd") as "square_hd" | "landscape_4_3" | "landscape_16_9",
         num_inference_steps: numInferenceSteps || 4,
       },
       logs: true,
