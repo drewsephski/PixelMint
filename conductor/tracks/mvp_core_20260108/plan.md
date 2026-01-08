@@ -2,8 +2,8 @@
 
 ## Phase 1: Project Initialization & Foundation
 - [x] Task: Scaffold Next.js project with Tailwind CSS and shadcn/ui [e1de0a9]
-- [~] Task: Integrate Clerk Authentication (Middleware, Sign-in/Sign-up pages)
-- [ ] Task: Set up Supabase Client and Database Schema (generations table)
+- [x] Task: Integrate Clerk Authentication (Middleware, Sign-in/Sign-up pages) [a1f91c1]
+- [~] Task: Set up Supabase Client and Database Schema (generations table)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation' (Protocol in workflow.md)
 
 ## Phase 2: Core Generation Workflow
